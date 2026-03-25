@@ -1,5 +1,5 @@
 (function () {
-  const DATA_URL = "/data/creators.json";
+  const DATA_URL = "data/creators.json";
   const STORAGE_KEY = "vsd-theme";
 
   function fetchCreators() {
