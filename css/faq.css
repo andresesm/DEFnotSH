@@ -57,7 +57,7 @@ html[data-theme="night"] {
 
 @font-face {
   font-family: "MontserratLocal";
-  src: url("/assets/fonts/Montserrat.woff2") format("woff2");
+  src: url("../assets/fonts/Montserrat.woff2") format("woff2");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
