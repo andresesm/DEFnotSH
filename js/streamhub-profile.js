@@ -18,16 +18,16 @@ const countryCodes = {
   'alemania': 'DE'
 };
 
-const CREATOR_TARGET = 'BillyBillete';
+const PLACEHOLDER_PREFIX = 'PH-STREAMER-';
 const BASE_PATH = '/';
 const PROFILE_PLACEHOLDER = `${BASE_PATH}assets/profile-placeholder.jpg`;
 const MINI_CREATOR_PLACEHOLDER = `${BASE_PATH}assets/profile-placeholder.jpg`;
 const GAME_PLACEHOLDER = `${BASE_PATH}assets/bbdd/gameplaceholder.webp`;
 
-const MAX_VISIBLE_GAMES = window.matchMedia("(max-width: 767px)").matches ? 8 : 12;
+const MAX_VISIBLE_GAMES = window.matchMedia('(max-width: 767px)').matches ? 8 : 12;
 const RESERVED_MORE_SLOT = 1;
 const MAX_VISIBLE_REAL_GAMES = MAX_VISIBLE_GAMES - RESERVED_MORE_SLOT;
-const MINI_CREATORS_COUNT = window.matchMedia("(max-width: 767px)").matches ? 4 : 7;
+const MINI_CREATORS_COUNT = window.matchMedia('(max-width: 767px)').matches ? 4 : 7;
 
 const SOCIAL_ICON_MAP = {
   twitch: '/assets/svg/rrss/twitch.svg',
@@ -38,8 +38,62 @@ const SOCIAL_ICON_MAP = {
   tiktok: '/assets/svg/rrss/tiktok.svg'
 };
 
+function isPlaceholderValue(value) {
+  const safeValue = String(value || '').trim();
+  return safeValue.startsWith(PLACEHOLDER_PREFIX);
+}
+
+function getMetaContent(name) {
+  const meta = document.querySelector(`meta[name="${name}"]`);
+  return meta ? String(meta.getAttribute('content') || '').trim() : '';
+}
+
+function getPathCreatorTarget() {
+  const parts = window.location.pathname.split('/').filter(Boolean);
+
+  if (parts[0] === 'u' && parts[1]) {
+    try {
+      return decodeURIComponent(parts[1]).trim();
+    } catch {
+      return String(parts[1]).trim();
+    }
+  }
+
+  return '';
+}
+
+function resolveCreatorTarget() {
+  const candidates = [
+    window.CREATOR_TARGET,
+    document.body?.dataset?.creatorTarget,
+    getMetaContent('creator-username'),
+    getPathCreatorTarget()
+  ];
+
+  return candidates.find(value => {
+    const safeValue = String(value || '').trim();
+    return safeValue && !isPlaceholderValue(safeValue);
+  }) || '';
+}
+
+function resolveCreatorDisplayName() {
+  const candidates = [
+    window.CREATOR_DISPLAYNAME,
+    document.body?.dataset?.creatorDisplayname,
+    getMetaContent('creator-displayname')
+  ];
+
+  return candidates.find(value => {
+    const safeValue = String(value || '').trim();
+    return safeValue && !isPlaceholderValue(safeValue);
+  }) || '';
+}
+
+const CREATOR_TARGET = resolveCreatorTarget();
+const CREATOR_DISPLAYNAME = resolveCreatorDisplayName();
+
 function findCreator(creators, target) {
-  const safeTarget = String(target).trim().toLowerCase();
+  const safeTarget = String(target || '').trim().toLowerCase();
 
   return creators.find(creator => {
     const id = String(creator?.id || '').trim().toLowerCase();
@@ -77,6 +131,53 @@ function getCreatorProfileUrl(creator) {
   if (!profileValue) return '#';
 
   return `/u/${encodeURIComponent(profileValue)}`;
+}
+
+function getCreatorLabel(creator) {
+  return String(
+    creator?.username ||
+    creator?.slug ||
+    creator?.id ||
+    CREATOR_TARGET ||
+    CREATOR_DISPLAYNAME ||
+    'creador'
+  ).trim();
+}
+
+function getCreatorDisplayUsername(creator) {
+  const username = getCreatorLabel(creator);
+  return username.startsWith('@') ? username : `@${username}`;
+}
+
+function syncTemplateBindings(creator) {
+  const resolvedUsername = String(
+    creator?.username || creator?.slug || creator?.id || CREATOR_TARGET || ''
+  ).trim();
+
+  const resolvedDisplay = getCreatorDisplayUsername(creator);
+
+  if (document.body && resolvedUsername) {
+    document.body.dataset.creatorTarget = resolvedUsername;
+  }
+
+  const usernameMeta = document.querySelector('meta[name="creator-username"]');
+  if (usernameMeta && resolvedUsername) {
+    usernameMeta.setAttribute('content', resolvedUsername);
+  }
+
+  const displayMeta = document.querySelector('meta[name="creator-displayname"]');
+  if (displayMeta && resolvedDisplay) {
+    displayMeta.setAttribute('content', resolvedDisplay);
+  }
+
+  if (resolvedDisplay) {
+    document.title = `StreamHUB - ${resolvedDisplay}`;
+  }
+
+  const descEl = document.querySelector('.profile-description');
+  if (descEl && resolvedUsername) {
+    descEl.setAttribute('data-twitch-description', resolvedUsername);
+  }
 }
 
 function shuffleArray(list) {
@@ -173,6 +274,7 @@ function renderGamesList(rawgGames, gamesContainer, expanded = false) {
     rawgGames.forEach(game => {
       gamesContainer.appendChild(createGameCard(game));
     });
+    gamesContainer.classList.remove('is-expanded');
     return;
   }
 
@@ -196,7 +298,7 @@ function renderGamesList(rawgGames, gamesContainer, expanded = false) {
       gamesContainer.appendChild(createGameCard(game));
     });
   }
-  
+
   gamesContainer.classList.toggle('is-expanded', expanded);
 }
 
@@ -237,7 +339,7 @@ function renderRandomMiniCreators(creators) {
   const container = document.getElementById('featured-mini-creators');
   if (!container) return;
 
-  const current = String(CREATOR_TARGET).trim().toLowerCase();
+  const current = String(CREATOR_TARGET || '').trim().toLowerCase();
 
   const validCreators = Array.isArray(creators)
     ? creators.filter(creator => {
@@ -246,6 +348,8 @@ function renderRandomMiniCreators(creators) {
         const id = String(creator.id || '').trim().toLowerCase();
         const slug = String(creator.slug || '').trim().toLowerCase();
         const username = String(creator.username || '').trim().toLowerCase();
+
+        if (!current) return true;
 
         return id !== current && slug !== current && username !== current;
       })
@@ -383,7 +487,7 @@ function renderCreatorSocials(creator) {
   socialsContainer.hidden = false;
   socialsContainer.innerHTML = '';
 
-  const creatorName = creator?.username || CREATOR_TARGET;
+  const creatorName = getCreatorLabel(creator);
 
   socialLinks.forEach(item => {
     const link = document.createElement('a');
@@ -415,6 +519,11 @@ function renderCreatorSocials(creator) {
 }
 
 function loadCreatorProfile() {
+  if (!CREATOR_TARGET) {
+    console.error('No se pudo resolver el creator target desde el HTML o la URL.');
+    return;
+  }
+
   fetch('/data/creators.json')
     .then(response => {
       if (!response.ok) {
@@ -432,19 +541,16 @@ function loadCreatorProfile() {
         return;
       }
 
-      console.log('Creator encontrado:', creator);
+      syncTemplateBindings(creator);
 
       const profilePhotoEl = document.querySelector('.profile-photo');
       if (profilePhotoEl) {
         const avatarUrl = resolveAssetUrl(creator.avatar_url);
-        console.log('avatar_url original:', creator.avatar_url);
-        console.log('avatar_url resuelto:', avatarUrl);
 
         if (avatarUrl) {
           profilePhotoEl.src = avatarUrl;
-          profilePhotoEl.alt = `Foto de perfil de ${creator.username || CREATOR_TARGET}`;
+          profilePhotoEl.alt = `Foto de perfil de ${getCreatorLabel(creator)}`;
           profilePhotoEl.onerror = function () {
-            console.warn('No se pudo cargar avatar_url:', avatarUrl);
             this.onerror = null;
             this.src = PROFILE_PLACEHOLDER;
           };
@@ -455,8 +561,7 @@ function loadCreatorProfile() {
 
       const usernameEl = document.querySelector('.username');
       if (usernameEl) {
-        const username = creator.username || CREATOR_TARGET;
-        usernameEl.textContent = username.startsWith('@') ? username : `@${username}`;
+        usernameEl.textContent = getCreatorDisplayUsername(creator);
       }
 
       const descEl = document.querySelector('.profile-description');

@@ -3,10 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StreamHUB - Perfil</title>
+    <title>PH-STREAMER-TITLE</title>
+  <meta name="description" content="PH-STREAMER-DESCRIPTION" />
+  <meta name="creator-username" content="PH-STREAMER-USERNAME" />
+  <meta name="streamhub-creator-key" content="PH-STREAMER-DATAKEY" />
+
+  <link rel="canonical" href="PH-STREAMER-CANONICAL" />
+
+  <meta property="og:type" content="profile" />
+  <meta property="og:title" content="PH-STREAMER-TITLE" />
+  <meta property="og:description" content="PH-STREAMER-DESCRIPTION" />
+  <meta property="og:url" content="PH-STREAMER-OG-URL" />
+  <meta property="og:image" content="PH-STREAMER-AVATAR" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="PH-STREAMER-TITLE" />
+  <meta name="twitter:description" content="PH-STREAMER-DESCRIPTION" />
+  <meta name="twitter:image" content="PH-STREAMER-AVATAR" />
+  <title>PH-STREAMER-USERNAME | StreamHUB</title>
   <link rel="stylesheet" href="../css/sub-style.css">
 </head>
 <body>
+    <script>
+    window.STREAMHUB_PROFILE_TEMPLATE = true;
+    window.CREATOR_TARGET = "PH-STREAMER-DATAKEY";
+    window.CREATOR_USERNAME = "PH-STREAMER-USERNAME";
+  </script>
   <div class="page">
 <header class="headerbar">
   <a href="/" class="back-btn" aria-label="Volver">
@@ -39,38 +61,47 @@
 <!-- COLUMNA IZQUIERDA -->
 <aside class="col-left">
   <div class="profile-photo-wrapper">
-    <img
-      src="/assets/avatar-placeholder-1.png"
-      alt="Foto de perfil"
-      class="profile-photo"
-      id="creator-avatar"
-    >
-  </div>
+            <img
+              src="PH-STREAMER-AVATAR"
+              alt="Foto de perfil de PH-STREAMER-USERNAME"
+              class="profile-photo"
+              id="creator-avatar"
+            />
+          </div>
 
-  <div class="profile-username">
-    <h1 class="username"></h1>
-    <span class="username-check" aria-label="Perfil verificado" title="Perfil verificado"></span>
-  </div>
+          <div class="profile-username">
+            <h1 class="username">PH-STREAMER-USERNAME</h1>
+            <span
+              class="username-check"
+              aria-label="Perfil verificado"
+              title="Perfil verificado"
+            ></span>
+          </div>
 
-  <p
-    class="profile-description"
-    data-twitch-description="@BillyBillete"
-    data-twitch-description-fallback="Descripción no disponible."
-  ></p>
+          <p
+            class="profile-description"
+            data-twitch-description="PH-STREAMER-USERNAME"
+            data-twitch-description-fallback="Descripción no disponible.">
+            PH-STREAMER-DESCRIPTION
+          </p>
 
   <p class="profile-meta">
-    <span class="meta-label">Residencia en</span>
-    <span class="meta-value" id="creator-residence"></span>
-    <span class="meta-flag" id="creator-residence-flag"></span>
-  </p>
+            <span class="meta-label">Residencia en</span>
+            <span class="meta-value" id="creator-residence"></span>
+            <span class="meta-flag" id="creator-residence-flag"></span>
+          </p>
 
   <p class="profile-meta">
-    <span class="meta-label">Nacionalidad</span>
-    <span class="meta-value" id="creator-nationality"></span>
-    <span class="meta-flag" id="creator-nationality-flag"></span>
-  </p>
+            <span class="meta-label">Nacionalidad</span>
+            <span class="meta-value" id="creator-nationality"></span>
+            <span class="meta-flag" id="creator-nationality-flag"></span>
+          </p>
 
-  <div class="profile-socials" id="creator-socials" aria-label="Redes sociales del creador"></div>
+  <div
+            class="profile-socials"
+            id="creator-socials"
+            aria-label="Redes sociales del creador"
+          ></div>
 </aside>
 
         <!-- COLUMNA CENTRAL / DERECHA -->
@@ -79,14 +110,19 @@
           <div class="tags-container" id="creator-tags"></div>
 
           <h2 class="section-title">Mis juegos</h2>
-<section class="creator-games-section">
-  <div id="creator-games" class="creator-games-grid"></div>
+          <section class="creator-games-section">
+            <div
+              id="creator-games"
+              class="creator-games-grid"
+              data-creator="PH-STREAMER-DATAKEY"
+            ></div>
 
-  <div id="creator-games-extra" class="creator-games-extra" hidden>
-    <div id="creator-games-pills" class="creator-games-pills"></div>
-  </div>
-</section>
+            <div id="creator-games-extra" class="creator-games-extra" hidden>
+              <div id="creator-games-pills" class="creator-games-pills"></div>
+            </div>
+          </section>
         </section>
+      </section>
       </section>
 
       <!-- Bottom section -->
@@ -113,8 +149,8 @@
     </main>
   </div>
 <script defer src="/js/game-cover-local.js"></script>
-<script defer src="/js/streamhub-profile.js"></script>
 <script defer src="/js/twitch-integration.js"></script>
+<script defer src="/js/streamhub-profile.js"></script>
 <script>
   (function () {
     const root = document.documentElement;
