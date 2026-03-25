@@ -270,7 +270,7 @@ function createGameCard(game) {
 
   const img = document.createElement('img');
   img.className = 'game-cover';
-  img.src = game?.cover || GAME_PLACEHOLDER;
+  img.src = resolveAssetUrl(game?.cover) || GAME_PLACEHOLDER;
   img.alt = game?.name || 'Juego';
   img.loading = 'lazy';
   img.onerror = function () {
