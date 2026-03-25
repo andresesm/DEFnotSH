@@ -59,7 +59,7 @@
 
 @font-face {
   font-family: "MontserratLocal";
-  src: url("/assets/fonts/Montserrat.woff2") format("woff2");
+  src: url("assets/fonts/Montserrat.woff2") format("woff2");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
@@ -800,13 +800,13 @@ img {
 .rrss-icon.rrss--youtube { width: 16px; height: 16px; }
 .rrss-icon.rrss--tiktok { width: 16px; height: 16px; }
 
-.rrss--email { -webkit-mask-image: url("/assets/svg/email.svg"); mask-image: url("/assets/svg/email.svg"); }
-.rrss--tiktok { -webkit-mask-image: url("/assets/svg/rrss/tiktok.svg"); mask-image: url("/assets/svg/rrss/tiktok.svg"); }
-.rrss--ig { -webkit-mask-image: url("/assets/svg/rrss/ig.svg"); mask-image: url("/assets/svg/rrss/ig.svg"); }
-.rrss--kick { -webkit-mask-image: url("/assets/svg/rrss/kick.svg"); mask-image: url("/assets/svg/rrss/kick.svg"); }
-.rrss--twitch { -webkit-mask-image: url("/assets/svg/rrss/twitch.svg"); mask-image: url("/assets/svg/rrss/twitch.svg"); }
-.rrss--x { -webkit-mask-image: url("/assets/svg/rrss/x.svg"); mask-image: url("/assets/svg/rrss/x.svg"); }
-.rrss--youtube { -webkit-mask-image: url("/assets/svg/rrss/youtube.svg"); mask-image: url("/assets/svg/rrss/youtube.svg"); }
+.rrss--email { -webkit-mask-image: url("assets/svg/email.svg"); mask-image: url("assets/svg/email.svg"); }
+.rrss--tiktok { -webkit-mask-image: url("assets/svg/rrss/tiktok.svg"); mask-image: url("assets/svg/rrss/tiktok.svg"); }
+.rrss--ig { -webkit-mask-image: url("assets/svg/rrss/ig.svg"); mask-image: url("assets/svg/rrss/ig.svg"); }
+.rrss--kick { -webkit-mask-image: url("assets/svg/rrss/kick.svg"); mask-image: url("assets/svg/rrss/kick.svg"); }
+.rrss--twitch { -webkit-mask-image: url("assets/svg/rrss/twitch.svg"); mask-image: url("assets/svg/rrss/twitch.svg"); }
+.rrss--x { -webkit-mask-image: url("assets/svg/rrss/x.svg"); mask-image: url("assets/svg/rrss/x.svg"); }
+.rrss--youtube { -webkit-mask-image: url("assets/svg/rrss/youtube.svg"); mask-image: url("assets/svg/rrss/youtube.svg"); }
 
 .grid-sentinel {
   height: 1px;
