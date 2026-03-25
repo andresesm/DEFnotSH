@@ -19,24 +19,6 @@ const countryCodes = {
 };
 
 const PLACEHOLDER_PREFIX = 'PH-STREAMER-';
-const BASE_PATH = '/';
-const PROFILE_PLACEHOLDER = `${BASE_PATH}assets/profile-placeholder.jpg`;
-const MINI_CREATOR_PLACEHOLDER = `${BASE_PATH}assets/profile-placeholder.jpg`;
-const GAME_PLACEHOLDER = `${BASE_PATH}assets/bbdd/gameplaceholder.webp`;
-
-const MAX_VISIBLE_GAMES = window.matchMedia('(max-width: 767px)').matches ? 8 : 12;
-const RESERVED_MORE_SLOT = 1;
-const MAX_VISIBLE_REAL_GAMES = MAX_VISIBLE_GAMES - RESERVED_MORE_SLOT;
-const MINI_CREATORS_COUNT = window.matchMedia('(max-width: 767px)').matches ? 4 : 7;
-
-const SOCIAL_ICON_MAP = {
-  twitch: '/assets/svg/rrss/twitch.svg',
-  kick: '/assets/svg/rrss/kick.svg',
-  ig: '/assets/svg/rrss/ig.svg',
-  x: '/assets/svg/rrss/x.svg',
-  youtube: '/assets/svg/rrss/youtube.svg',
-  tiktok: '/assets/svg/rrss/tiktok.svg'
-};
 
 function isPlaceholderValue(value) {
   const safeValue = String(value || '').trim();
@@ -48,14 +30,101 @@ function getMetaContent(name) {
   return meta ? String(meta.getAttribute('content') || '').trim() : '';
 }
 
+function normalizeBasePath(path) {
+  const safePath = String(path || '').trim();
+
+  if (!safePath || safePath === '/') return '/';
+
+  return `/${safePath.replace(/^\/+|\/+$/g, '')}/`;
+}
+
+function getConfiguredBasePath() {
+  const candidates = [
+    window.STREAMHUB_BASE_PATH,
+    document.body?.dataset?.basePath,
+    getMetaContent('site-base-path')
+  ];
+
+  const match = candidates.find(value => {
+    const safeValue = String(value || '').trim();
+    return safeValue && !isPlaceholderValue(safeValue);
+  });
+
+  return match ? normalizeBasePath(match) : '';
+}
+
+function getBasePathFromScript() {
+  const currentScript = [...document.scripts].find(script => {
+    const rawSrc = script.getAttribute('src') || '';
+    return rawSrc.includes('streamhub-profile');
+  });
+
+  if (!currentScript?.src) return '';
+
+  try {
+    const url = new URL(currentScript.src, window.location.href);
+    const match = url.pathname.match(/^(.*\/)js\/streamhub-profile(?:-[\w.-]+)?\.js$/);
+    if (!match) return '';
+    return normalizeBasePath(match[1]);
+  } catch {
+    return '';
+  }
+}
+
+function getBasePathFromPathname() {
+  const parts = window.location.pathname.split('/').filter(Boolean);
+  const uIndex = parts.indexOf('u');
+
+  if (uIndex >= 0) {
+    return normalizeBasePath(parts.slice(0, uIndex).join('/'));
+  }
+
+  if (window.location.hostname.endsWith('github.io') && parts.length > 0) {
+    return normalizeBasePath(parts[0]);
+  }
+
+  return '/';
+}
+
+function getBasePath() {
+  return (
+    getConfiguredBasePath() ||
+    getBasePathFromScript() ||
+    getBasePathFromPathname() ||
+    '/'
+  );
+}
+
+const BASE_PATH = getBasePath();
+window.__STREAMHUB_BASE_PATH = BASE_PATH;
+
+const PROFILE_PLACEHOLDER = `${BASE_PATH}assets/profile-placeholder.jpg`;
+const MINI_CREATOR_PLACEHOLDER = `${BASE_PATH}assets/profile-placeholder.jpg`;
+const GAME_PLACEHOLDER = `${BASE_PATH}assets/bbdd/gameplaceholder.webp`;
+
+const MAX_VISIBLE_GAMES = window.matchMedia('(max-width: 767px)').matches ? 8 : 12;
+const RESERVED_MORE_SLOT = 1;
+const MAX_VISIBLE_REAL_GAMES = MAX_VISIBLE_GAMES - RESERVED_MORE_SLOT;
+const MINI_CREATORS_COUNT = window.matchMedia('(max-width: 767px)').matches ? 4 : 7;
+
+const SOCIAL_ICON_MAP = {
+  twitch: `${BASE_PATH}assets/svg/rrss/twitch.svg`,
+  kick: `${BASE_PATH}assets/svg/rrss/kick.svg`,
+  ig: `${BASE_PATH}assets/svg/rrss/ig.svg`,
+  x: `${BASE_PATH}assets/svg/rrss/x.svg`,
+  youtube: `${BASE_PATH}assets/svg/rrss/youtube.svg`,
+  tiktok: `${BASE_PATH}assets/svg/rrss/tiktok.svg`
+};
+
 function getPathCreatorTarget() {
   const parts = window.location.pathname.split('/').filter(Boolean);
+  const uIndex = parts.indexOf('u');
 
-  if (parts[0] === 'u' && parts[1]) {
+  if (uIndex !== -1 && parts[uIndex + 1]) {
     try {
-      return decodeURIComponent(parts[1]).trim();
+      return decodeURIComponent(parts[uIndex + 1]).trim();
     } catch {
-      return String(parts[1]).trim();
+      return String(parts[uIndex + 1]).trim();
     }
   }
 
@@ -117,10 +186,7 @@ function resolveAssetUrl(path) {
     return trimmed;
   }
 
-  const cleanedBase = BASE_PATH.replace(/\/+$/, '');
-  const cleanedPath = trimmed.replace(/^\/+/, '');
-
-  return `${cleanedBase}/${cleanedPath}`;
+  return `${BASE_PATH}${trimmed.replace(/^\/+/, '')}`;
 }
 
 function getCreatorProfileUrl(creator) {
@@ -130,7 +196,7 @@ function getCreatorProfileUrl(creator) {
 
   if (!profileValue) return '#';
 
-  return `/u/${encodeURIComponent(profileValue)}`;
+  return `${BASE_PATH}u/${encodeURIComponent(profileValue)}/`;
 }
 
 function getCreatorLabel(creator) {
@@ -158,6 +224,10 @@ function syncTemplateBindings(creator) {
 
   if (document.body && resolvedUsername) {
     document.body.dataset.creatorTarget = resolvedUsername;
+  }
+
+  if (document.body && resolvedDisplay) {
+    document.body.dataset.creatorDisplayname = resolvedDisplay;
   }
 
   const usernameMeta = document.querySelector('meta[name="creator-username"]');
@@ -524,10 +594,10 @@ function loadCreatorProfile() {
     return;
   }
 
-  fetch('../data/creators.json')
+  fetch(`${BASE_PATH}data/creators.json`)
     .then(response => {
       if (!response.ok) {
-        throw new Error('Error al cargar creators.json');
+        throw new Error(`Error al cargar creators.json (${response.status})`);
       }
       return response.json();
     })
@@ -565,8 +635,11 @@ function loadCreatorProfile() {
       }
 
       const descEl = document.querySelector('.profile-description');
-      if (descEl && creator.description) {
-        descEl.textContent = creator.description;
+      if (descEl) {
+        descEl.textContent =
+          creator.description ||
+          descEl.getAttribute('data-twitch-description-fallback') ||
+          '';
       }
 
       const natEl = document.getElementById('creator-nationality');
