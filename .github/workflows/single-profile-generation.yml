@@ -1,4 +1,4 @@
-name: Test profile generation
+name: Single profile generation
 
 on:
   workflow_dispatch:

@@ -241,7 +241,7 @@ function syncTemplateBindings(creator) {
   }
 
   if (resolvedDisplay) {
-    document.title = `StreamHUB - ${resolvedDisplay}`;
+    document.title = `${resolvedDisplay} - StreamHUB`;
   }
 
   const descEl = document.querySelector('.profile-description');
