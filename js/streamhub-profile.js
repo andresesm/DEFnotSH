@@ -524,7 +524,7 @@ function loadCreatorProfile() {
     return;
   }
 
-  fetch('/data/creators.json')
+  fetch('../data/creators.json')
     .then(response => {
       if (!response.ok) {
         throw new Error('Error al cargar creators.json');
