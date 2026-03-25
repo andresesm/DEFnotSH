@@ -1,0 +1,534 @@
+const countryCodes = {
+  'venezuela': 'VE',
+  'chile': 'CL',
+  'argentina': 'AR',
+  'brasil': 'BR',
+  'colombia': 'CO',
+  'perú': 'PE',
+  'ecuador': 'EC',
+  'bolivia': 'BO',
+  'uruguay': 'UY',
+  'paraguay': 'PY',
+  'mexico': 'MX',
+  'estados unidos': 'US',
+  'españa': 'ES',
+  'portugal': 'PT',
+  'italia': 'IT',
+  'francia': 'FR',
+  'alemania': 'DE'
+};
+
+const CREATOR_TARGET = 'BillyBillete';
+const BASE_PATH = '/';
+const PROFILE_PLACEHOLDER = `${BASE_PATH}assets/profile-placeholder.jpg`;
+const MINI_CREATOR_PLACEHOLDER = `${BASE_PATH}assets/profile-placeholder.jpg`;
+const GAME_PLACEHOLDER = `${BASE_PATH}assets/bbdd/gameplaceholder.webp`;
+
+const MAX_VISIBLE_GAMES = window.matchMedia("(max-width: 767px)").matches ? 8 : 12;
+const RESERVED_MORE_SLOT = 1;
+const MAX_VISIBLE_REAL_GAMES = MAX_VISIBLE_GAMES - RESERVED_MORE_SLOT;
+const MINI_CREATORS_COUNT = window.matchMedia("(max-width: 767px)").matches ? 4 : 7;
+
+const SOCIAL_ICON_MAP = {
+  twitch: '/assets/svg/rrss/twitch.svg',
+  kick: '/assets/svg/rrss/kick.svg',
+  ig: '/assets/svg/rrss/ig.svg',
+  x: '/assets/svg/rrss/x.svg',
+  youtube: '/assets/svg/rrss/youtube.svg',
+  tiktok: '/assets/svg/rrss/tiktok.svg'
+};
+
+function findCreator(creators, target) {
+  const safeTarget = String(target).trim().toLowerCase();
+
+  return creators.find(creator => {
+    const id = String(creator?.id || '').trim().toLowerCase();
+    const slug = String(creator?.slug || '').trim().toLowerCase();
+    const username = String(creator?.username || '').trim().toLowerCase();
+
+    return id === safeTarget || slug === safeTarget || username === safeTarget;
+  });
+}
+
+function resolveAssetUrl(path) {
+  if (!path || typeof path !== 'string') return '';
+
+  const trimmed = path.trim();
+
+  if (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('//')
+  ) {
+    return trimmed;
+  }
+
+  const cleanedBase = BASE_PATH.replace(/\/+$/, '');
+  const cleanedPath = trimmed.replace(/^\/+/, '');
+
+  return `${cleanedBase}/${cleanedPath}`;
+}
+
+function getCreatorProfileUrl(creator) {
+  const profileValue = String(
+    creator?.slug || creator?.username || creator?.id || ''
+  ).trim();
+
+  if (!profileValue) return '#';
+
+  return `/u/${encodeURIComponent(profileValue)}`;
+}
+
+function shuffleArray(list) {
+  const arr = [...list];
+
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+
+  return arr;
+}
+
+function createGameCard(game) {
+  const card = document.createElement('article');
+  card.className = 'game-card';
+
+  const coverWrapper = document.createElement('div');
+  coverWrapper.className = 'game-cover-wrapper';
+
+  const img = document.createElement('img');
+  img.className = 'game-cover';
+  img.src = game?.cover || GAME_PLACEHOLDER;
+  img.alt = game?.name || 'Juego';
+  img.loading = 'lazy';
+  img.onerror = function () {
+    this.onerror = null;
+    this.src = GAME_PLACEHOLDER;
+  };
+
+  const title = document.createElement('p');
+  title.className = 'game-title';
+  title.textContent = game?.name || 'Juego sin nombre';
+
+  coverWrapper.appendChild(img);
+  card.appendChild(coverWrapper);
+  card.appendChild(title);
+
+  return card;
+}
+
+function createShowMoreCard(hiddenCount, onToggle, expanded) {
+  const button = document.createElement('button');
+  button.className = 'game-card game-card--more';
+  button.type = 'button';
+  button.setAttribute('aria-label', expanded ? 'Mostrar menos juegos' : 'Mostrar más juegos');
+  button.setAttribute('aria-expanded', String(expanded));
+
+  const coverWrapper = document.createElement('div');
+  coverWrapper.className = 'game-cover-wrapper game-cover-wrapper--toggle';
+
+  const icon = document.createElement('div');
+  icon.className = 'game-cover-toggle-icon';
+  icon.setAttribute('aria-hidden', 'true');
+
+  icon.innerHTML = expanded
+    ? `
+      <svg viewBox="0 0 64 64" class="game-cover-toggle-svg" fill="none">
+        <rect x="6" y="6" width="52" height="52" rx="14" />
+        <path d="M20 32H44" />
+      </svg>
+    `
+    : `
+      <svg viewBox="0 0 64 64" class="game-cover-toggle-svg" fill="none">
+        <rect x="6" y="6" width="52" height="52" rx="14" />
+        <path d="M20 32H44" />
+        <path d="M32 20V44" />
+      </svg>
+    `;
+
+  const title = document.createElement('p');
+  title.className = 'game-title';
+  title.textContent = expanded ? 'Mostrar menos' : `+${hiddenCount} más`;
+
+  coverWrapper.appendChild(icon);
+  button.appendChild(coverWrapper);
+  button.appendChild(title);
+  button.addEventListener('click', onToggle);
+
+  return button;
+}
+
+function renderGamesList(rawgGames, gamesContainer, expanded = false) {
+  gamesContainer.innerHTML = '';
+
+  if (!Array.isArray(rawgGames) || !rawgGames.length) {
+    gamesContainer.innerHTML = '<p class="error-games">No se encontraron juegos</p>';
+    return;
+  }
+
+  const hasMoreGames = rawgGames.length > MAX_VISIBLE_GAMES;
+
+  if (!hasMoreGames) {
+    rawgGames.forEach(game => {
+      gamesContainer.appendChild(createGameCard(game));
+    });
+    return;
+  }
+
+  const visibleGames = rawgGames.slice(0, MAX_VISIBLE_REAL_GAMES);
+  const hiddenGames = rawgGames.slice(MAX_VISIBLE_REAL_GAMES);
+
+  visibleGames.forEach(game => {
+    gamesContainer.appendChild(createGameCard(game));
+  });
+
+  const toggleButton = createShowMoreCard(
+    hiddenGames.length,
+    () => renderGamesList(rawgGames, gamesContainer, !expanded),
+    expanded
+  );
+
+  gamesContainer.appendChild(toggleButton);
+
+  if (expanded) {
+    hiddenGames.forEach(game => {
+      gamesContainer.appendChild(createGameCard(game));
+    });
+  }
+  
+  gamesContainer.classList.toggle('is-expanded', expanded);
+}
+
+function createMiniCreatorCard(creator) {
+  const link = document.createElement('a');
+  link.className = 'featured-mini-card';
+  link.href = getCreatorProfileUrl(creator);
+
+  const avatarWrap = document.createElement('div');
+  avatarWrap.className = 'featured-mini-card__avatar-wrap';
+
+  const img = document.createElement('img');
+  img.className = 'featured-mini-card__avatar';
+  img.loading = 'lazy';
+  img.src = resolveAssetUrl(creator?.avatar_url) || MINI_CREATOR_PLACEHOLDER;
+  img.alt = `Foto de perfil de ${creator?.username || 'creador'}`;
+  img.onerror = function () {
+    this.onerror = null;
+    this.src = MINI_CREATOR_PLACEHOLDER;
+  };
+
+  const username = document.createElement('p');
+  username.className = 'featured-mini-card__username';
+
+  const safeUsername = String(creator?.username || '').trim();
+  username.textContent = safeUsername
+    ? (safeUsername.startsWith('@') ? safeUsername : `@${safeUsername}`)
+    : '@creador';
+
+  avatarWrap.appendChild(img);
+  link.appendChild(avatarWrap);
+  link.appendChild(username);
+
+  return link;
+}
+
+function renderRandomMiniCreators(creators) {
+  const container = document.getElementById('featured-mini-creators');
+  if (!container) return;
+
+  const current = String(CREATOR_TARGET).trim().toLowerCase();
+
+  const validCreators = Array.isArray(creators)
+    ? creators.filter(creator => {
+        if (!creator || !(creator.username || creator.slug || creator.id)) return false;
+
+        const id = String(creator.id || '').trim().toLowerCase();
+        const slug = String(creator.slug || '').trim().toLowerCase();
+        const username = String(creator.username || '').trim().toLowerCase();
+
+        return id !== current && slug !== current && username !== current;
+      })
+    : [];
+
+  if (!validCreators.length) {
+    container.innerHTML = '<p class="games-empty-state">No hay creadores para mostrar.</p>';
+    return;
+  }
+
+  const selectedCreators = shuffleArray(validCreators).slice(0, MINI_CREATORS_COUNT);
+
+  container.innerHTML = '';
+  selectedCreators.forEach(creator => {
+    container.appendChild(createMiniCreatorCard(creator));
+  });
+}
+
+function loadFlags(creator) {
+  if (creator?.nationality) {
+    const natFlag = document.getElementById('creator-nationality-flag');
+    if (natFlag) {
+      const countryName = creator.nationality.toLowerCase().trim();
+      const countryCode = countryCodes[countryName] || countryName.slice(0, 2).toUpperCase();
+      natFlag.innerHTML = `<img src="https://flagsapi.com/${countryCode}/flat/24.png" alt="${creator.nationality}" width="24" height="18">`;
+    }
+  }
+
+  if (creator?.residence) {
+    const resFlag = document.getElementById('creator-residence-flag');
+    if (resFlag) {
+      const countryName = creator.residence.toLowerCase().trim();
+      const countryCode = countryCodes[countryName] || countryName.slice(0, 2).toUpperCase();
+      resFlag.innerHTML = `<img src="https://flagsapi.com/${countryCode}/flat/24.png" alt="${creator.residence}" width="24" height="18">`;
+    }
+  }
+}
+
+function normalizeHandle(value) {
+  return String(value || '').trim().replace(/^@+/, '');
+}
+
+function normalizeUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('//')) {
+    return raw;
+  }
+  return `https://${raw}`;
+}
+
+function buildSocialLinks(creator) {
+  const socials = creator?.socials || {};
+
+  const definitions = [
+    {
+      key: 'twitch',
+      label: 'Twitch',
+      getUrl: value => `https://www.twitch.tv/${normalizeHandle(value)}`
+    },
+    {
+      key: 'kick',
+      label: 'Kick',
+      getUrl: value => `https://kick.com/${normalizeHandle(value)}`
+    },
+    {
+      key: 'ig',
+      label: 'Instagram',
+      getUrl: value => `https://www.instagram.com/${normalizeHandle(value)}`
+    },
+    {
+      key: 'x',
+      label: 'X',
+      getUrl: value => `https://x.com/${normalizeHandle(value)}`
+    },
+    {
+      key: 'youtube',
+      label: 'YouTube',
+      getUrl: value => {
+        const clean = String(value || '').trim();
+        if (!clean) return '';
+        if (
+          clean.startsWith('http://') ||
+          clean.startsWith('https://') ||
+          clean.startsWith('//')
+        ) {
+          return clean;
+        }
+        return `https://www.youtube.com/@${normalizeHandle(clean)}`;
+      }
+    },
+    {
+      key: 'tiktok',
+      label: 'TikTok',
+      getUrl: value => `https://www.tiktok.com/@${normalizeHandle(value)}`
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      getUrl: value => `mailto:${String(value || '').trim()}`
+    }
+  ];
+
+  return definitions
+    .map(def => {
+      const rawValue = socials?.[def.key];
+      const cleanValue = String(rawValue || '').trim();
+
+      if (!cleanValue) return null;
+
+      const href = def.getUrl(cleanValue);
+      if (!href) return null;
+
+      return {
+        key: def.key,
+        label: def.label,
+        href
+      };
+    })
+    .filter(Boolean);
+}
+
+function renderCreatorSocials(creator) {
+  const socialsContainer = document.getElementById('creator-socials');
+  if (!socialsContainer) return;
+
+  const socialLinks = buildSocialLinks(creator);
+
+  if (!socialLinks.length) {
+    socialsContainer.innerHTML = '';
+    socialsContainer.hidden = true;
+    return;
+  }
+
+  socialsContainer.hidden = false;
+  socialsContainer.innerHTML = '';
+
+  const creatorName = creator?.username || CREATOR_TARGET;
+
+  socialLinks.forEach(item => {
+    const link = document.createElement('a');
+    link.className = 'social-pill social-pill--' + item.key;
+    link.href = item.href;
+    link.setAttribute('aria-label', `${item.label} de ${creatorName}`);
+
+    if (item.key === 'email') {
+      link.rel = 'noopener noreferrer';
+    } else {
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+    }
+
+    const iconPath = SOCIAL_ICON_MAP[item.key];
+    if (iconPath) {
+      const img = document.createElement('img');
+      img.src = iconPath;
+      img.alt = '';
+      img.loading = 'lazy';
+      img.className = 'social-pill__icon';
+      link.appendChild(img);
+    } else {
+      link.textContent = item.label;
+    }
+
+    socialsContainer.appendChild(link);
+  });
+}
+
+function loadCreatorProfile() {
+  fetch('/data/creators.json')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Error al cargar creators.json');
+      }
+      return response.json();
+    })
+    .then(creators => {
+      renderRandomMiniCreators(creators);
+
+      const creator = findCreator(creators, CREATOR_TARGET);
+
+      if (!creator) {
+        console.error(`No se encontró el creador "${CREATOR_TARGET}" en creators.json`);
+        return;
+      }
+
+      console.log('Creator encontrado:', creator);
+
+      const profilePhotoEl = document.querySelector('.profile-photo');
+      if (profilePhotoEl) {
+        const avatarUrl = resolveAssetUrl(creator.avatar_url);
+        console.log('avatar_url original:', creator.avatar_url);
+        console.log('avatar_url resuelto:', avatarUrl);
+
+        if (avatarUrl) {
+          profilePhotoEl.src = avatarUrl;
+          profilePhotoEl.alt = `Foto de perfil de ${creator.username || CREATOR_TARGET}`;
+          profilePhotoEl.onerror = function () {
+            console.warn('No se pudo cargar avatar_url:', avatarUrl);
+            this.onerror = null;
+            this.src = PROFILE_PLACEHOLDER;
+          };
+        } else {
+          profilePhotoEl.src = PROFILE_PLACEHOLDER;
+        }
+      }
+
+      const usernameEl = document.querySelector('.username');
+      if (usernameEl) {
+        const username = creator.username || CREATOR_TARGET;
+        usernameEl.textContent = username.startsWith('@') ? username : `@${username}`;
+      }
+
+      const descEl = document.querySelector('.profile-description');
+      if (descEl && creator.description) {
+        descEl.textContent = creator.description;
+      }
+
+      const natEl = document.getElementById('creator-nationality');
+      const resEl = document.getElementById('creator-residence');
+
+      if (natEl && creator.nationality) {
+        natEl.textContent = creator.nationality;
+      }
+
+      if (resEl && creator.residence) {
+        resEl.textContent = creator.residence;
+      }
+
+      loadFlags(creator);
+      renderCreatorSocials(creator);
+
+      window.__STREAMHUB_PROFILE_CREATOR = creator;
+      window.dispatchEvent(new CustomEvent('streamhub:profile-loaded', {
+        detail: { creator }
+      }));
+
+      if (window.TwitchIntegration && typeof window.TwitchIntegration.init === 'function') {
+        window.TwitchIntegration.init([creator]);
+      }
+
+      const tagsContainer = document.getElementById('creator-tags');
+      if (tagsContainer && Array.isArray(creator.tags)) {
+        tagsContainer.innerHTML = '';
+        creator.tags.forEach(tag => {
+          const span = document.createElement('span');
+          span.className = 'tag';
+          span.textContent = tag;
+          tagsContainer.appendChild(span);
+        });
+      }
+
+      const gamesContainer = document.getElementById('creator-games');
+      if (gamesContainer && Array.isArray(creator.games)) {
+        gamesContainer.innerHTML = '<div class="loading-games">Cargando juegos...</div>';
+
+        const gameNames = creator.games
+          .map(game => (typeof game === 'string' ? game : game?.title || game?.name))
+          .filter(Boolean)
+          .slice(0, 50);
+
+        if (window.searchGamesRAWG) {
+          window.searchGamesRAWG(gameNames)
+            .then(rawgGames => {
+              renderGamesList(rawgGames, gamesContainer, false);
+            })
+            .catch(error => {
+              console.error('Error cargando juegos', error);
+              gamesContainer.innerHTML = '<p class="error-games">Error cargando juegos</p>';
+            });
+        } else {
+          console.error('searchGamesRAWG no está disponible');
+          gamesContainer.innerHTML = '<p class="error-games">RAWG no está cargado</p>';
+        }
+      }
+    })
+    .catch(error => {
+      console.error(error);
+    });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadCreatorProfile);
+} else {
+  loadCreatorProfile();
+}
