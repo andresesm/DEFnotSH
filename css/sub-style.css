@@ -318,11 +318,11 @@ html[data-theme="day"] .theme-toggle-moon {
   display: inline-block;
   flex: 0 0 20px;
   background-color: var(--accent-main);
-  -webkit-mask-image: url("/assets/svg/verify.svg");
+  -webkit-mask-image: url("../assets/svg/verify.svg");
   -webkit-mask-repeat: no-repeat;
   -webkit-mask-position: center;
   -webkit-mask-size: contain;
-  mask-image: url("/assets/svg/verify.svg");
+  mask-image: url("../assets/svg/verify.svg");
   mask-repeat: no-repeat;
   mask-position: center;
   mask-size: contain;
