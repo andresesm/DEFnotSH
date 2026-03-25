@@ -438,22 +438,45 @@ function renderRandomMiniCreators(creators) {
   });
 }
 
+function extractCountryName(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  const parts = raw.split(',').map(part => part.trim()).filter(Boolean);
+  if (!parts.length) return '';
+
+  return parts[parts.length - 1].toLowerCase();
+}
+
+function getCountryCodeFromLocation(value) {
+  const countryName = extractCountryName(value);
+  if (!countryName) return '';
+
+  return countryCodes[countryName] || countryName.slice(0, 2).toUpperCase();
+}
+
 function loadFlags(creator) {
   if (creator?.nationality) {
     const natFlag = document.getElementById('creator-nationality-flag');
     if (natFlag) {
-      const countryName = creator.nationality.toLowerCase().trim();
-      const countryCode = countryCodes[countryName] || countryName.slice(0, 2).toUpperCase();
-      natFlag.innerHTML = `<img src="https://flagsapi.com/${countryCode}/flat/24.png" alt="${creator.nationality}" width="24" height="18">`;
+      const countryCode = getCountryCodeFromLocation(creator.nationality);
+      if (countryCode) {
+        natFlag.innerHTML = `<img src="https://flagsapi.com/${countryCode}/flat/24.png" alt="${creator.nationality}" width="24" height="18">`;
+      } else {
+        natFlag.innerHTML = '';
+      }
     }
   }
 
   if (creator?.residence) {
     const resFlag = document.getElementById('creator-residence-flag');
     if (resFlag) {
-      const countryName = creator.residence.toLowerCase().trim();
-      const countryCode = countryCodes[countryName] || countryName.slice(0, 2).toUpperCase();
-      resFlag.innerHTML = `<img src="https://flagsapi.com/${countryCode}/flat/24.png" alt="${creator.residence}" width="24" height="18">`;
+      const countryCode = getCountryCodeFromLocation(creator.residence);
+      if (countryCode) {
+        resFlag.innerHTML = `<img src="https://flagsapi.com/${countryCode}/flat/24.png" alt="${creator.residence}" width="24" height="18">`;
+      } else {
+        resFlag.innerHTML = '';
+      }
     }
   }
 }
