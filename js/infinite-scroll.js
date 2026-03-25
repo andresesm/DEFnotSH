@@ -23,17 +23,62 @@
   let renderedCount = 0;
   let observer = null;
 
-  let creatorById = new Map(); // id -> creator
+  let creatorById = new Map();
 
-  // sortMode: "random" | "az" | "za"
   let sortMode = "random";
   let randomOrder = [];
 
   let lastSortClickTs = 0;
   let isRendering = false;
 
-  // ✅ Live map (solo twitch por tu integración actual)
   let liveByUser = {};
+
+  function normalizeBasePath(path) {
+    const safe = String(path || "").trim();
+    if (!safe || safe === "/") return "/";
+    return `/${safe.replace(/^\/+|\/+$/g, "")}/`;
+  }
+
+  function getFallbackBasePath() {
+    const parts = window.location.pathname.split("/").filter(Boolean);
+
+    if (window.location.hostname.endsWith("github.io") && parts.length > 0) {
+      return normalizeBasePath(parts[0]);
+    }
+
+    return "/";
+  }
+
+  function getProfileUrl(username) {
+    const safeUsername = String(username || "").trim();
+    if (!safeUsername) return "#";
+
+    if (window.VSDRouting && typeof window.VSDRouting.getProfileUrl === "function") {
+      return window.VSDRouting.getProfileUrl(safeUsername);
+    }
+
+    return `${getFallbackBasePath()}u/${encodeURIComponent(safeUsername)}/`;
+  }
+
+  function resolveAssetUrl(path) {
+    const raw = String(path || "").trim();
+    if (!raw) return "assets/avatar-placeholder-1.png";
+
+    if (
+      raw.startsWith("http://") ||
+      raw.startsWith("https://") ||
+      raw.startsWith("//")
+    ) {
+      return raw;
+    }
+
+    const basePath =
+      window.VSDRouting && window.VSDRouting.BASE_PATH
+        ? window.VSDRouting.BASE_PATH
+        : getFallbackBasePath();
+
+    return `${basePath}${raw.replace(/^\/+/, "")}`;
+  }
 
   function shuffle(arr) {
     const a = arr.slice();
@@ -120,7 +165,6 @@
     a.title = SOCIAL_LABEL[key] || key;
     a.setAttribute("aria-label", SOCIAL_LABEL[key] || key);
 
-    // Para selección/estilos sin depender de title
     a.dataset.platform = key;
 
     const icon = document.createElement("span");
@@ -131,7 +175,6 @@
     return a;
   }
 
-  // Export para que el popup use el mismo orden/constructor sin duplicar lógica
   window.VSDPlatformIcons = {
     ORDER: SOCIAL_ORDER.slice(),
     label: (key) => SOCIAL_LABEL[key] || key,
@@ -197,8 +240,9 @@
     if (creator && creator.id != null) card.dataset.id = creator.id;
     card.dataset.username = creator && creator.username ? String(creator.username) : "";
 
-    // Guardar handle twitch en el DOM (para TwitchIntegration)
-    card.dataset.twitch = (creator && creator.socials && creator.socials.twitch) ? String(creator.socials.twitch) : "";
+    card.dataset.twitch = (creator && creator.socials && creator.socials.twitch)
+      ? String(creator.socials.twitch)
+      : "";
 
     const avatarWrapper = document.createElement("div");
     avatarWrapper.className = "creator-avatar-wrapper";
@@ -207,7 +251,7 @@
     img.className = "creator-avatar";
     img.alt = `Avatar de ${creator.username || "creador"}`;
     img.loading = "lazy";
-    img.src = creator.avatar_url || "assets/avatar-placeholder-1.png";
+    img.src = resolveAssetUrl(creator.avatar_url || "assets/avatar-placeholder-1.png");
 
     avatarWrapper.appendChild(img);
     card.appendChild(avatarWrapper);
@@ -265,7 +309,6 @@
     isRendering = false;
   }
 
-  // ✅ Fix adecuado: rearmar el observer después de reset
   function rearmObserver() {
     if (!observer || !SENTINEL) return;
     observer.unobserve(SENTINEL);
@@ -275,25 +318,17 @@
   function resetAndRender() {
     if (!GRID) return;
 
-    // Limpia el grid sin tocar el sentinel (el sentinel está fuera del grid en tu HTML)
     GRID.replaceChildren();
-
     renderedCount = 0;
 
     if (sortMode === "random") {
-      // ✅ Random con prioridad de live (Twitch)
       randomOrder = buildRandomOrderWithLivePriority(allCreators);
     }
 
     recomputeFiltered();
-
-    // Render inicial
     renderUntilSentinelOutOfView();
-
-    // Re-evaluación segura tras el reset (observer “pegado”)
     rearmObserver();
 
-    // Segunda pasada tras layout (ayuda cuando el sentinel cambia de posición tras el repaint)
     requestAnimationFrame(() => {
       renderUntilSentinelOutOfView();
       rearmObserver();
@@ -317,7 +352,7 @@
     if (!card) return;
     const username = String(card.dataset.username || "").trim();
     if (!username) return;
-    window.location.href = `/u/${encodeURIComponent(username)}`;
+    window.location.href = getProfileUrl(username);
   }
 
   function attachGridDelegatedClicksOnce() {
@@ -342,7 +377,6 @@
     });
   }
 
-  // ✅ Cuando TwitchIntegration emite el estado live, re-ordenamos RNDM
   window.addEventListener("twitch:live-update", function (e) {
     liveByUser = (e && e.detail && e.detail.liveByUser) ? e.detail.liveByUser : {};
 
@@ -359,7 +393,6 @@
     if (!initialized) {
       initialized = true;
 
-      // ✅ Aleatorio al cargar (con prioridad live si ya hay data)
       randomOrder = buildRandomOrderWithLivePriority(allCreators);
 
       updateSortButtonUI();
@@ -379,7 +412,6 @@
       return;
     }
 
-    // Si ya estaba inicializado, solo re-render
     randomOrder = buildRandomOrderWithLivePriority(allCreators);
     updateSortButtonUI();
     resetAndRender();

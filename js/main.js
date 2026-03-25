@@ -2,9 +2,58 @@
   const DATA_URL = "data/creators.json";
   const STORAGE_KEY = "vsd-theme";
 
+  function normalizeBasePath(path) {
+    const safe = String(path || "").trim();
+    if (!safe || safe === "/") return "/";
+    return `/${safe.replace(/^\/+|\/+$/g, "")}/`;
+  }
+
+  function getResolvedCreatorsUrl() {
+    try {
+      return new URL(DATA_URL, document.baseURI);
+    } catch (_) {
+      return new URL("data/creators.json", window.location.href);
+    }
+  }
+
+  function getSiteBasePath() {
+    try {
+      const resolvedDataUrl = getResolvedCreatorsUrl();
+      const basePath = resolvedDataUrl.pathname.replace(/data\/creators\.json(?:\?.*)?$/, "");
+      return normalizeBasePath(basePath);
+    } catch (_) {
+      const parts = window.location.pathname.split("/").filter(Boolean);
+
+      if (window.location.hostname.endsWith("github.io") && parts.length > 0) {
+        return normalizeBasePath(parts[0]);
+      }
+
+      return "/";
+    }
+  }
+
+  const BASE_PATH = getSiteBasePath();
+
+  function getProfileUrl(username) {
+    const safeUsername = String(username || "").trim();
+    if (!safeUsername) return "#";
+    return `${BASE_PATH}u/${encodeURIComponent(safeUsername)}/`;
+  }
+
+  window.VSDRouting = {
+    BASE_PATH,
+    DATA_URL: getResolvedCreatorsUrl().href,
+    getProfileUrl
+  };
+
   function fetchCreators() {
-    return fetch(DATA_URL)
-      .then(r => r.json())
+    return fetch(window.VSDRouting.DATA_URL)
+      .then(r => {
+        if (!r.ok) {
+          throw new Error(`HTTP ${r.status}`);
+        }
+        return r.json();
+      })
       .catch(err => {
         console.error("Error loading creators.json", err);
         return [];
@@ -81,7 +130,10 @@
     if (creditsModal) {
       new MutationObserver(() => {
         if (isCreditsOpen()) pushCreditsState();
-      }).observe(creditsModal, { attributes: true, attributeFilter: ["class", "aria-hidden"] });
+      }).observe(creditsModal, {
+        attributes: true,
+        attributeFilter: ["class", "aria-hidden"]
+      });
     }
 
     window.addEventListener("popstate", function () {
