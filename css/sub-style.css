@@ -282,18 +282,24 @@ html[data-theme="day"] .theme-toggle-moon {
 /* Profile */
 .profile-photo-wrapper {
   width: 100%;
+  max-width: 280px;
   border-radius: 20px;
   overflow: hidden;
   background: var(--bg-surface-soft-2);
   aspect-ratio: 1 / 1;
-  margin-bottom: 22px;
+  margin: 0 auto 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-photo {
   width: 100%;
+  max-width: 280px;
   height: 100%;
   object-fit: cover;
   display: block;
+  margin: 0 auto;
 }
 
 .profile-username {
@@ -959,9 +965,8 @@ html[data-theme="night"] .social-pill__icon {
   }
 
   .creator-games-grid:not(.is-expanded) > .game-card:nth-child(n + 9) {
-  display: none;
+    display: none;
   }
-
 
   .creator-games-grid .game-card--more {
     display: flex;
@@ -1001,9 +1006,9 @@ html[data-theme="night"] .social-pill__icon {
   }
 
   .footer-inner {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .footer-nav {
@@ -1013,8 +1018,8 @@ html[data-theme="night"] .social-pill__icon {
   .footer-inner,
   .footer-nav,
   .footer-inner p {
-  white-space: nowrap;
-}
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1054,9 +1059,8 @@ html[data-theme="night"] .social-pill__icon {
   }
 
   .creator-games-grid:not(.is-expanded) > .game-card:nth-child(n + 9) {
-  display: none;
+    display: none;
   }
-
 
   .featured-mini-creators__grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1355,7 +1359,6 @@ html[data-theme="night"] .social-pill__icon {
 
   .bottom-top .featured-mini-card__username {
     font-size: 0.78rem;
-    /*line-height: 1.15;*/
   }
 
   .site-footer {
@@ -1363,10 +1366,10 @@ html[data-theme="night"] .social-pill__icon {
   }
 
   .footer-inner {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
 
   .footer-nav {
     flex-wrap: wrap;
