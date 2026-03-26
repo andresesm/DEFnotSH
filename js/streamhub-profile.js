@@ -611,6 +611,83 @@ function renderCreatorSocials(creator) {
   });
 }
 
+function getUsernameAvailableWidth(title, container) {
+  const containerStyles = getComputedStyle(container);
+  const gapValue = parseFloat(containerStyles.columnGap || containerStyles.gap || '0') || 0;
+  const children = [...container.children].filter(el => !el.hidden);
+
+  let usedWidth = 0;
+  let visibleChildren = 0;
+
+  children.forEach(el => {
+    const styles = getComputedStyle(el);
+    const isHidden = styles.display === 'none' || styles.visibility === 'hidden';
+    if (isHidden) return;
+
+    visibleChildren += 1;
+
+    if (el !== title) {
+      usedWidth += el.getBoundingClientRect().width;
+    }
+  });
+
+  const totalGap = Math.max(visibleChildren - 1, 0) * gapValue;
+  return Math.max(container.clientWidth - usedWidth - totalGap, 0);
+}
+
+function fitUsernameSingleLine() {
+  const title = document.querySelector('.username');
+  const container = document.querySelector('.profile-username');
+
+  if (!title || !container) return;
+
+  const MAX_SIZE = 32;
+  const MIN_SIZE = 10;
+
+  title.style.whiteSpace = 'nowrap';
+  title.style.fontSize = `${MAX_SIZE}px`;
+
+  let loops = 0;
+  let availableWidth = getUsernameAvailableWidth(title, container);
+
+  while (title.scrollWidth > availableWidth && loops < 80) {
+    const currentSize = parseFloat(getComputedStyle(title).fontSize);
+    if (currentSize <= MIN_SIZE) break;
+
+    title.style.fontSize = `${currentSize - 1}px`;
+    availableWidth = getUsernameAvailableWidth(title, container);
+    loops += 1;
+  }
+}
+
+let usernameFitObserver = null;
+
+function initUsernameFit() {
+  const container = document.querySelector('.profile-username');
+  if (!container) return;
+
+  requestAnimationFrame(() => {
+    fitUsernameSingleLine();
+  });
+
+  if ('ResizeObserver' in window) {
+    if (!usernameFitObserver) {
+      usernameFitObserver = new ResizeObserver(() => {
+        fitUsernameSingleLine();
+      });
+    }
+
+    usernameFitObserver.disconnect();
+    usernameFitObserver.observe(container);
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      fitUsernameSingleLine();
+    }).catch(() => {});
+  }
+}
+
 function loadCreatorProfile() {
   if (!CREATOR_TARGET) {
     console.error('No se pudo resolver el creator target desde el HTML o la URL.');
@@ -655,6 +732,7 @@ function loadCreatorProfile() {
       const usernameEl = document.querySelector('.username');
       if (usernameEl) {
         usernameEl.textContent = getCreatorDisplayUsername(creator);
+        fitUsernameSingleLine();
       }
 
       const descEl = document.querySelector('.profile-description');
@@ -722,53 +800,26 @@ function loadCreatorProfile() {
           gamesContainer.innerHTML = '<p class="error-games">RAWG no está cargado</p>';
         }
       }
+
+      requestAnimationFrame(() => {
+        fitUsernameSingleLine();
+      });
     })
     .catch(error => {
       console.error(error);
     });
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', loadCreatorProfile);
-} else {
+function initProfilePage() {
+  initUsernameFit();
   loadCreatorProfile();
 }
 
-function fitUsernameText() {
-  const title = document.querySelector('.username');
-  const container = document.querySelector('.profile-username');
-
-  if (!title || !container) return;
-
-  const MAX_SIZE = 32;
-  const MIN_SIZE = 16;
-
-  title.style.fontSize = `${MAX_SIZE}px`;
-
-  let guard = 0;
-  while (title.scrollWidth > container.clientWidth && guard < 40) {
-    const current = parseFloat(getComputedStyle(title).fontSize);
-    if (current <= MIN_SIZE) break;
-    title.style.fontSize = `${current - 1}px`;
-    guard += 1;
-  }
-}
-
-const usernameResizeObserver = new ResizeObserver(() => {
-  fitUsernameText();
-});
-
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    fitUsernameText();
-    const container = document.querySelector('.profile-username');
-    if (container) usernameResizeObserver.observe(container);
-  });
+  document.addEventListener('DOMContentLoaded', initProfilePage);
 } else {
-  fitUsernameText();
-  const container = document.querySelector('.profile-username');
-  if (container) usernameResizeObserver.observe(container);
+  initProfilePage();
 }
 
-window.addEventListener('load', fitUsernameText);
-window.addEventListener('resize', fitUsernameText);
+window.addEventListener('load', fitUsernameSingleLine);
+window.addEventListener('resize', fitUsernameSingleLine);
