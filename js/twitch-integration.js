@@ -406,9 +406,9 @@
 
       .profile-live-badge {
         position: absolute;
-        left: 16px;
-        right: 16px;
-        bottom: -18px;
+        left: 0px;
+        right: 0px;
+        bottom: -24px;
         min-height: 44px;
         display: flex;
         align-items: center;
@@ -417,7 +417,7 @@
         background: linear-gradient(135deg, #ef4444, #dc2626);
         color: #ffffff;
         font-family: "MontserratLocal", sans-serif;
-        font-size: 1rem;
+        font-size: 1.5rem;
         font-weight: 650;
         letter-spacing: 0.02em;
         text-transform: uppercase;
@@ -436,12 +436,12 @@
         }
 
         .profile-live-badge {
-          left: 12px;
-          right: 12px;
+          left: 0px;
+          right: 0px;
           bottom: -16px;
           min-height: 40px;
           border-radius: 0 0 16px 16px;
-          font-size: 0.92rem;
+          font-size: 1.5rem;
         }
       }
 
