@@ -275,7 +275,7 @@ main {
   right: 0;
   top: calc(var(--header-offset) * -1);
   bottom: 0;
-  background: url("../assets/Topolines.png") center top / cover no-repeat;
+  background: url("../assets/Topolines.webp") center top / cover no-repeat;
   z-index: 0;
   pointer-events: none;
   -webkit-mask-image: linear-gradient(
