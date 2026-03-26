@@ -611,80 +611,110 @@ function renderCreatorSocials(creator) {
   });
 }
 
-function getUsernameAvailableWidth(title, container) {
-  const containerStyles = getComputedStyle(container);
-  const gapValue = parseFloat(containerStyles.columnGap || containerStyles.gap || '0') || 0;
-  const children = [...container.children].filter(el => !el.hidden);
+function fitTextSingleLine(textEl, containerEl, options = {}) {
+  if (!textEl || !containerEl) return;
+  if (!containerEl.clientWidth) return;
 
-  let usedWidth = 0;
-  let visibleChildren = 0;
+  const defaultSize = parseFloat(getComputedStyle(textEl).fontSize) || 16;
+  const maxSize = Number(options.maxSize ?? defaultSize);
+  const minSize = Number(options.minSize ?? 10);
+  const step = Number(options.step ?? 1);
+  const maxLoops = Number(options.maxLoops ?? 80);
 
-  children.forEach(el => {
-    const styles = getComputedStyle(el);
-    const isHidden = styles.display === 'none' || styles.visibility === 'hidden';
-    if (isHidden) return;
+  textEl.style.whiteSpace = 'nowrap';
+  textEl.style.fontSize = `${maxSize}px`;
 
-    visibleChildren += 1;
+  let loops = 0;
+  while (containerEl.scrollWidth > containerEl.clientWidth && loops < maxLoops) {
+    const currentSize = parseFloat(getComputedStyle(textEl).fontSize);
+    if (currentSize <= minSize) break;
 
-    if (el !== title) {
-      usedWidth += el.getBoundingClientRect().width;
-    }
-  });
-
-  const totalGap = Math.max(visibleChildren - 1, 0) * gapValue;
-  return Math.max(container.clientWidth - usedWidth - totalGap, 0);
+    const nextSize = Math.max(currentSize - step, minSize);
+    textEl.style.fontSize = `${nextSize}px`;
+    loops += 1;
+  }
 }
 
 function fitUsernameSingleLine() {
   const title = document.querySelector('.username');
   const container = document.querySelector('.profile-username');
 
-  if (!title || !container) return;
-
-  const MAX_SIZE = 32;
-  const MIN_SIZE = 10;
-
-  title.style.whiteSpace = 'nowrap';
-  title.style.fontSize = `${MAX_SIZE}px`;
-
-  let loops = 0;
-  let availableWidth = getUsernameAvailableWidth(title, container);
-
-  while (title.scrollWidth > availableWidth && loops < 80) {
-    const currentSize = parseFloat(getComputedStyle(title).fontSize);
-    if (currentSize <= MIN_SIZE) break;
-
-    title.style.fontSize = `${currentSize - 1}px`;
-    availableWidth = getUsernameAvailableWidth(title, container);
-    loops += 1;
-  }
+  fitTextSingleLine(title, container, {
+    maxSize: 32,
+    minSize: 10,
+    step: 1,
+    maxLoops: 100
+  });
 }
 
-let usernameFitObserver = null;
+function fitMetaValueSingleLine(valueEl) {
+  if (!valueEl) return;
+  const container = valueEl.closest('.profile-meta');
 
-function initUsernameFit() {
-  const container = document.querySelector('.profile-username');
-  if (!container) return;
-
-  requestAnimationFrame(() => {
-    fitUsernameSingleLine();
+  fitTextSingleLine(valueEl, container, {
+    maxSize: 16,
+    minSize: 10,
+    step: 0.5,
+    maxLoops: 60
   });
+}
 
-  if ('ResizeObserver' in window) {
-    if (!usernameFitObserver) {
-      usernameFitObserver = new ResizeObserver(() => {
-        fitUsernameSingleLine();
-      });
-    }
+function fitProfileMetaValues() {
+  fitMetaValueSingleLine(document.getElementById('creator-residence'));
+  fitMetaValueSingleLine(document.getElementById('creator-nationality'));
+}
 
-    usernameFitObserver.disconnect();
-    usernameFitObserver.observe(container);
+function fitAllProfileTexts() {
+  fitUsernameSingleLine();
+  fitProfileMetaValues();
+}
+
+let fitAllTextsFrame = null;
+
+function scheduleFitAllProfileTexts() {
+  if (fitAllTextsFrame) {
+    cancelAnimationFrame(fitAllTextsFrame);
   }
 
+  fitAllTextsFrame = requestAnimationFrame(() => {
+    fitAllTextsFrame = null;
+    fitAllProfileTexts();
+  });
+}
+
+let profileTextResizeObserver = null;
+
+function refreshProfileTextObservers() {
+  if (!('ResizeObserver' in window)) return;
+
+  if (!profileTextResizeObserver) {
+    profileTextResizeObserver = new ResizeObserver(() => {
+      scheduleFitAllProfileTexts();
+    });
+  }
+
+  profileTextResizeObserver.disconnect();
+
+  const observedElements = [
+    document.querySelector('.profile-username'),
+    ...document.querySelectorAll('.profile-meta')
+  ].filter(Boolean);
+
+  observedElements.forEach(el => {
+    profileTextResizeObserver.observe(el);
+  });
+}
+
+function initTextFitting() {
+  refreshProfileTextObservers();
+  scheduleFitAllProfileTexts();
+
   if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => {
-      fitUsernameSingleLine();
-    }).catch(() => {});
+    document.fonts.ready
+      .then(() => {
+        scheduleFitAllProfileTexts();
+      })
+      .catch(() => {});
   }
 }
 
@@ -732,7 +762,6 @@ function loadCreatorProfile() {
       const usernameEl = document.querySelector('.username');
       if (usernameEl) {
         usernameEl.textContent = getCreatorDisplayUsername(creator);
-        fitUsernameSingleLine();
       }
 
       const descEl = document.querySelector('.profile-description');
@@ -746,12 +775,12 @@ function loadCreatorProfile() {
       const natEl = document.getElementById('creator-nationality');
       const resEl = document.getElementById('creator-residence');
 
-      if (natEl && creator.nationality) {
-        natEl.textContent = creator.nationality;
+      if (natEl) {
+        natEl.textContent = creator.nationality || '';
       }
 
-      if (resEl && creator.residence) {
-        resEl.textContent = creator.residence;
+      if (resEl) {
+        resEl.textContent = creator.residence || '';
       }
 
       loadFlags(creator);
@@ -801,9 +830,8 @@ function loadCreatorProfile() {
         }
       }
 
-      requestAnimationFrame(() => {
-        fitUsernameSingleLine();
-      });
+      refreshProfileTextObservers();
+      scheduleFitAllProfileTexts();
     })
     .catch(error => {
       console.error(error);
@@ -811,7 +839,7 @@ function loadCreatorProfile() {
 }
 
 function initProfilePage() {
-  initUsernameFit();
+  initTextFitting();
   loadCreatorProfile();
 }
 
@@ -821,5 +849,6 @@ if (document.readyState === 'loading') {
   initProfilePage();
 }
 
-window.addEventListener('load', fitUsernameSingleLine);
-window.addEventListener('resize', fitUsernameSingleLine);
+window.addEventListener('load', scheduleFitAllProfileTexts);
+window.addEventListener('resize', scheduleFitAllProfileTexts);
+window.addEventListener('streamhub:profile-loaded', scheduleFitAllProfileTexts);
