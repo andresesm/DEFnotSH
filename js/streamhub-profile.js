@@ -733,3 +733,42 @@ if (document.readyState === 'loading') {
 } else {
   loadCreatorProfile();
 }
+
+function fitUsernameText() {
+  const title = document.querySelector('.username');
+  const container = document.querySelector('.profile-username');
+
+  if (!title || !container) return;
+
+  const MAX_SIZE = 32;
+  const MIN_SIZE = 16;
+
+  title.style.fontSize = `${MAX_SIZE}px`;
+
+  let guard = 0;
+  while (title.scrollWidth > container.clientWidth && guard < 40) {
+    const current = parseFloat(getComputedStyle(title).fontSize);
+    if (current <= MIN_SIZE) break;
+    title.style.fontSize = `${current - 1}px`;
+    guard += 1;
+  }
+}
+
+const usernameResizeObserver = new ResizeObserver(() => {
+  fitUsernameText();
+});
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    fitUsernameText();
+    const container = document.querySelector('.profile-username');
+    if (container) usernameResizeObserver.observe(container);
+  });
+} else {
+  fitUsernameText();
+  const container = document.querySelector('.profile-username');
+  if (container) usernameResizeObserver.observe(container);
+}
+
+window.addEventListener('load', fitUsernameText);
+window.addEventListener('resize', fitUsernameText);
