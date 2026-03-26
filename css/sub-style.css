@@ -138,9 +138,16 @@ body {
 
 .col-left {
   flex: 0 0 320px;
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
   padding: 26px 24px 28px;
   background: var(--bg-surface);
   align-self: flex-start;
+}
+
+.col-left > * {
+  min-width: 0;
 }
 
 .col-right {
@@ -814,6 +821,7 @@ html[data-theme="night"] .social-pill__icon {
     flex: 1 1 auto;
     width: 100%;
     min-width: 0;
+    max-width: none;
   }
 
   .col-left {
