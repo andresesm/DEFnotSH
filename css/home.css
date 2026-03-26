@@ -615,3 +615,15 @@ html[data-theme="day"] .landing-btn-primary:active {
     transform: none !important;
   }
 }
+
+.smiley-icon {
+  display: inline-block;
+  width: 3em;
+  height: 3em;
+  flex: 0 0 1.1em;
+  vertical-align: -0.12em;
+  color: var(--text-main);
+  background-color: currentColor;
+  -webkit-mask: url("../assets/svg/smiley.svg") center / contain no-repeat;
+  mask: url("../assets/svg/smiley.svg") center / contain no-repeat;
+}
