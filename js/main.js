@@ -1,5 +1,5 @@
 (function () {
-  const DATA_URL = "data/creators.json";
+  const DATA_URL = "../data/creators.json";
   const STORAGE_KEY = "vsd-theme";
 
   function normalizeBasePath(path) {
@@ -12,7 +12,7 @@
     try {
       return new URL(DATA_URL, document.baseURI);
     } catch (_) {
-      return new URL("data/creators.json", window.location.href);
+      return new URL("../data/creators.json", window.location.href);
     }
   }
 

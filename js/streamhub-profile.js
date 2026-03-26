@@ -622,10 +622,12 @@ function fitTextSingleLine(textEl, containerEl, options = {}) {
   const maxLoops = Number(options.maxLoops ?? 80);
 
   textEl.style.whiteSpace = 'nowrap';
+  textEl.style.overflow = 'hidden';
+  textEl.style.textOverflow = 'clip';
   textEl.style.fontSize = `${maxSize}px`;
 
   let loops = 0;
-  while (containerEl.scrollWidth > containerEl.clientWidth && loops < maxLoops) {
+  while (textEl.scrollWidth > textEl.clientWidth && loops < maxLoops) {
     const currentSize = parseFloat(getComputedStyle(textEl).fontSize);
     if (currentSize <= minSize) break;
 
