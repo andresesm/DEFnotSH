@@ -22,6 +22,7 @@
 
   <link rel="stylesheet" href="../../css/Linkshub.css" />
   <link rel="stylesheet" href="../../css/sub-style.css">
+  <link rel="stylesheet" href="stars.css">
   <link rel="icon" href="../../favicon.ico">
 
     <!-- Google tag (gtag.js) -->
@@ -53,6 +54,10 @@
         class="linkshub-view"
         aria-label="Links principales del creador"
       >
+  <div class="bgfx-space" aria-hidden="true">
+    <div class="bgstars" id="bgstars"></div>
+  </div>
+
         <section class="profile-card">
           <div class="profile-top">
             <div class="avatar-wrap">
@@ -67,7 +72,15 @@
 
             <div class="identity-block">
               <p class="eyebrow">Streamer</p>
+              <div class="username-sparkle-wrap">
               <h1 class="creator-name">@xamytc</h1>
+              <span class="star star-1" aria-hidden="true"></span>
+              <span class="star star-2" aria-hidden="true"></span>
+              <span class="star star-3" aria-hidden="true"></span>
+              <span class="star star-4" aria-hidden="true"></span>
+              <span class="star star-5" aria-hidden="true"></span>
+              <span class="star star-6" aria-hidden="true"></span>
+              <span class="star star-7" aria-hidden="true"></span></div>
             </div>
 
             <div class="profile-actions">
@@ -260,49 +273,37 @@
       </section>
     </main>
   </div>
+<script defer src="bgstars.js"></script>
 <script>
   (function () {
-    const gradients = [
-      ["#196F80", "#CD4BBC"],
-      ["#1B6372", "#9E56D8"],
-      ["#14606D", "#D962A7"],
-      ["#1F5B67", "#A04EE8"],
-      ["#245966", "#C04F95"],
-      ["#155E68", "#8F63E1"],
-      ["#1E6673", "#B64FC8"],
-      ["#2A5862", "#A94CD2"],
-      ["#185768", "#D4559C"],
-      ["#1F6277", "#8D59D9"],
-      ["#25596D", "#C74CB2"],
-      ["#1A5F74", "#A146D1"],
-      ["#205B66", "#D64F89"],
-      ["#18626E", "#944FE2"],
-      ["#225C6C", "#BD57C7"],
-      ["#175E79", "#D654A1"],
-      ["#2A5663", "#A657DA"],
-      ["#1A6770", "#C951B6"],
-      ["#245B73", "#8C5DE4"],
-      ["#16616B", "#D04FAF"]
-    ];
+  const root = document.getElementById('xamytcStars');
+  if (!root) return;
 
-    function applyRandomGradient() {
-      const el = document.getElementById("randomGradient");
-      if (!el) return;
+  const starCount = window.innerWidth <= 768 ? 320 : 520;
+  const baseDepth = 820;
+  const depthVariance = 320;
+  const fragment = document.createDocumentFragment();
 
-      const pair = gradients[Math.floor(Math.random() * gradients.length)];
-      const angle = [90, 110, 120, 135, 150][Math.floor(Math.random() * 5)];
+  for (let i = 0; i < starCount; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
 
-      el.style.setProperty("--g1", pair[0]);
-      el.style.setProperty("--g2", pair[1]);
-      el.style.setProperty("--ga", angle + "deg");
-    }
+    const scale = 0.25 + Math.random() * 1.15;
+    const depth = baseDepth + Math.random() * depthVariance;
+    const rotateY = Math.random() * 360;
+    const rotateX = Math.random() * -55;
+    const alpha = 0.35 + Math.random() * 0.65;
 
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", applyRandomGradient, { once: true });
-    } else {
-      applyRandomGradient();
-    }
-  })();
+    star.style.opacity = alpha.toFixed(3);
+    star.style.transformOrigin = `0 0 ${depth}px`;
+    star.style.transform =
+      `translate3d(0,0,-${depth}px) rotateY(${rotateY}deg) rotateX(${rotateX}deg) scale(${scale})`;
+
+    fragment.appendChild(star);
+  }
+
+  root.replaceChildren(fragment);
+})();
 </script>
 <script>
   (function () {
